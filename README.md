@@ -14,7 +14,7 @@ pip3 install -e .
 ## User Guide
 Setup free5gmano host and port
 ```
-cd free5gmano-cli
+cd free5gmano-cli/nm
 vim setting.py
 ```
 1. create NSST
