@@ -19,6 +19,11 @@ def allocate_nssi(data):
     return requests.post(allocate_nssi_url, data=data, headers=headers)
 
 
+def deallocate_nssi(nss_instance_id):
+    deallocate_nssi_url = nm_url.format('NSS', 'SliceProfiles', nss_instance_id)
+    return requests.delete(deallocate_nssi_url, headers=headers)
+
+
 def create_moi(model_name, data):
     create_moi_url = nm_url.format(model_name, uuid.uuid4().__str__())
     return requests.put(create_moi_url, data=data, headers=headers)
