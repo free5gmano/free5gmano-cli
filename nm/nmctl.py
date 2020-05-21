@@ -68,7 +68,9 @@ def deallocate():
 @click.option('-n', '--nfvo', required=True)
 def create_nss_template(template_id, nfvo):
     request_data = {'genericTemplates': list(template_id), 'nfvoType': [nfvo]}
+    click.echo(request_data)
     response = api.create_nss_template(json.dumps(request_data))
+    click.echo(response.json())
     if response.status_code == 201:
         click.echo('OperationSucceeded, NSST is combined.')
         click.echo('NSST Id: ' + response.json()['templateId'])
@@ -363,13 +365,38 @@ def allocate_nssi(nss_template_id):
 
     response = api.get_single_nss_template(nss_template_id)
     if response.status_code == 200:
-        click.echo('Create Nssi...')
-        data = {
-            'attributeListIn': {
-                'nsstid': nss_template_id,
-                "using_existed": ""
+        choise = click.confirm('Do you want to Using exist Nssi?')
+        if choise:
+            using_exist = click.prompt('Nssi ID: ')
+            click.echo('Modify Nssi {}...'.format(using_exist))
+            data = {
+                'attributeListIn': {
+                    'nsstid': nss_template_id,
+                    "using_existed": using_exist
+                }
             }
-        }
-        response = api.allocate_nssi(json.dumps(data))
+            response = api.allocate_nssi(json.dumps(data))
+            click.echo('OperationSucceeded')
+        else:
+            click.echo('Create Nssi...')
+            data = {
+                'attributeListIn': {
+                    'nsstid': nss_template_id,
+                    "using_existed": ""
+                }
+            }
+            response = api.allocate_nssi(json.dumps(data))
+            click.echo('OperationSucceeded')
+            click.echo('Nssi ID: {}'.format(response.json()['nSSIId']))
+
+
+@deallocate.command('nssi')
+@click.argument('nss_instance_id', required=True)
+def deallocate_nssi(nss_instance_id):
+    click.echo('Delete Nssi...')
+    response = api.deallocate_nssi(nss_instance_id)
+    if response.status_code == 200:
         click.echo('OperationSucceeded')
-        click.echo('Nssi ID: {}'.format(response.json()['nSSIId']))
+    else:
+        click.echo('OperationFailed')
+
