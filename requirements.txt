@@ -1,4 +1,4 @@
 PyYAML
-pandas
+pandas==0.24.2
 requests
-click
+click==7.1

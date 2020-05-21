@@ -2,11 +2,11 @@ import uuid
 
 import requests
 
-from nm import settings
+from nm.nmctl import settings
 
 nm_url = settings.NM_URL + 'ObjectManagement/{0}/{1}/{2}'
 service_mapping_url = settings.NM_URL + '{0}/{1}/{2}'
-template_url = settings.NM_URL + '{0}/{1}/{2}/{3}'
+template_url = settings.NM_URL + '{0}/{1}/{2}'
 headers = {'Content-Type': 'application/json'}
 zip_headers = {
     'Accept': "application/json,application/zip",
@@ -15,7 +15,7 @@ zip_headers = {
 
 
 def allocate_nssi(data):
-    allocate_nssi_url = nm_url.format('NSS', 'SliceProfiles', 'command')
+    allocate_nssi_url = nm_url.format('NSS', 'SliceProfiles', '')
     return requests.post(allocate_nssi_url, data=data, headers=headers)
 
 
@@ -55,60 +55,67 @@ def get_service_mapping_plugin(name):
     return requests.get(register_plugin_url)
 
 
-def update_service_mapping_plugin(name, files):
-    register_plugin_url = service_mapping_url.format('plugin', 'management', name)
-    return requests.patch(register_plugin_url, files=files, headers=zip_headers)
+def update_service_mapping_plugin(data, files):
+    register_plugin_url = service_mapping_url.format('plugin', 'management', data['name'] + "/")
+    return requests.patch(register_plugin_url, files=files, data=data, headers=zip_headers)
 
 
 def delete_service_mapping_plugin(name):
-    register_plugin_url = service_mapping_url.format('plugin', 'management', name)
+    register_plugin_url = service_mapping_url.format('plugin', 'management', name + "/")
     return requests.delete(register_plugin_url, headers=headers)
 
 
 def create_nss_template(data):
-    create_template_url = template_url.format('ObjectManagement', 'NSS', 'Template', '')
+    create_template_url = template_url.format('ObjectManagement', 'SliceTemplate', '')
     return requests.post(create_template_url, data=data, headers=headers)
 
 
 def get_nss_template_list():
-    get_template_url = template_url.format('ObjectManagement', 'NSS', 'Template', '')
+    get_template_url = template_url.format('ObjectManagement', 'SliceTemplate', '')
     return requests.get(get_template_url, headers=headers)
 
 
 def get_single_nss_template(nss_template_id):
-    get_template_url = template_url.format('ObjectManagement', 'NSS', 'Template', nss_template_id)
+    get_template_url = template_url.format('ObjectManagement', 'SliceTemplate',
+                                           nss_template_id + '/')
     return requests.get(get_template_url, headers=headers)
 
 
 def delete_nss_template(template_id):
-    delete_template_url = template_url.format('ObjectManagement', 'NSS', 'Template',
-                                              template_id)
+    delete_template_url = template_url.format('ObjectManagement', 'SliceTemplate',
+                                              template_id + '/')
     return requests.delete(delete_template_url, headers=headers)
 
 
 def create_template(data):
-    create_template_url = template_url.format('ObjectManagement', 'Generic', 'Template', '')
+    create_template_url = template_url.format('ObjectManagement', 'GenericTemplate', '')
     return requests.post(create_template_url, data=data, headers=headers)
 
 
-def on_board_template(template_id, files):
-    on_board_template_url = template_url.format('ObjectManagement', 'Generic', 'Template',
-                                                template_id)
-    return requests.put(on_board_template_url, files=files, headers=zip_headers)
+def download_template(template_type):
+    download_template_url = template_url.format('ObjectManagement', 'GenericTemplate',
+                                                'download/{}/'.format(template_type))
+    return requests.get(download_template_url, headers=headers)
+
+
+def on_board_template(template_id, files, data):
+    on_board_template_url = template_url.format('ObjectManagement', 'GenericTemplate',
+                                                template_id + '/')
+    return requests.put(on_board_template_url, files=files, data=data, headers=zip_headers)
 
 
 def get_template_list():
-    get_template_url = template_url.format('ObjectManagement', 'Generic', 'Template', '')
+    get_template_url = template_url.format('ObjectManagement', 'GenericTemplate', '')
     return requests.get(get_template_url, headers=headers)
 
 
 def get_single_template(template_id):
-    get_template_url = template_url.format('ObjectManagement', 'Generic', 'Template', template_id)
+    get_template_url = template_url.format('ObjectManagement', 'GenericTemplate', template_id + '/')
     return requests.get(get_template_url, headers=headers)
 
 
 def delete_template(template_id):
-    delete_template_url = template_url.format('ObjectManagement', 'Generic', 'Template',
+    delete_template_url = template_url.format('ObjectManagement', 'GenericTemplate',
                                               template_id)
     return requests.delete(delete_template_url, headers=headers)
 
