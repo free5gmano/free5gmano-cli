@@ -400,3 +400,66 @@ def deallocate_nssi(nss_instance_id):
     else:
         click.echo('OperationFailed')
 
+
+@create.command('subscriptions')
+@click.argument('nss_instance_id', required=True)
+def create_subscriptions(nss_instance_id):
+    import requests
+    import json
+    import random
+    import time
+    import base64
+    uri = settings.NM_URL + "subscriptions/"
+    headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+    data = {
+      "filter": {
+        "nsInstanceSubscriptionFilter": {
+          "nSSIId": [
+            nss_instance_id
+          ]
+        }
+      },
+      "callbackUri": settings.Kafka_URL + "topics/fault_alarm/",
+      "timeTick": 1
+    }
+    response = requests.post(uri, data=json.dumps(data), headers=headers)
+    if response.status_code == 201:
+        click.echo("notification Id:", response.json()['data']['notificationId'])
+        url = settings.Kafka_URL + "consumers/group"
+        data = {
+            "id": str(int(random.random()*100)),
+            "format": "binary",
+            "auto.offset.reset": "earliest",
+            "auto.commit.enable": "false"
+        }
+        header = {"Content-Type": "application/vnd.kafka.v2+json"}
+        consumers = requests.post(url=url, json=data, headers=header)
+        click.echo("Listen Kafka:")
+        click.echo(consumers.json()['base_uri'] + "/subscription")
+        data = {"topics": ["alarm"]}
+        subscribe = requests.post(url=consumers.json()['base_uri'] + "/subscription",
+                                  json=data, headers=header)
+        header = {"Content-Type": "application/vnd.kafka.json.v2+json"}
+
+        while 1:
+            record = requests.get(url=consumers.json()['base_uri'] + "/records", headers=header)
+            click.echo(record.json())
+            if record.json():
+                click.echo(base64.b64decode(record.json()[-1]['value']).decode())
+                break
+            time.sleep(1)
+        click.echo('OperationSucceeded')
+    else:
+        click.echo('OperationFailed')
+
+
+@delete.command('subscriptions')
+@click.argument('notification_id', required=True)
+def delete_subscriptions(notification_id):
+    import requests
+    uri = settings.NM_URL + "subscriptions/{}/".format(notification_id)
+    response = requests.delete(uri)
+    if response.status_code == 201:
+        click.echo('OperationSucceeded')
+    else:
+        click.echo('OperationFailed')

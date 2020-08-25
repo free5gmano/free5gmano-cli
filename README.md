@@ -83,3 +83,13 @@ nmctl get nsst <NSST template_id>
 ```
 nmctl delete nsst <NSST template_id>
 ```
+
+8. subscribe NSSI (Fault Management)
+```
+nmctl create subscriptions <NSS_INSTANCE_ID>
+```
+
+8. unsubscribe NSSI (Fault Management)
+```
+nmctl delete subscriptions <NSS_INSTANCE_ID>
+```
