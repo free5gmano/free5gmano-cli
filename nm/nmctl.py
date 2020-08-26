@@ -402,55 +402,110 @@ def deallocate_nssi(nss_instance_id):
 
 
 @create.command('subscriptions')
+@click.option('-t', '--type', required=True, help='Only fm or moi')
 @click.argument('nss_instance_id', required=True)
-def create_subscriptions(nss_instance_id):
+def create_subscriptions(type, nss_instance_id):
     import requests
     import json
     import random
     import time
     import base64
-    uri = settings.NM_URL + "subscriptions/"
-    headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
-    data = {
-      "filter": {
-        "nsInstanceSubscriptionFilter": {
-          "nSSIId": [
-            nss_instance_id
+
+    if type == 'fm':
+        uri = settings.NM_URL + "subscriptions/"
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+        data = {
+            "filter": {
+            "nsInstanceSubscriptionFilter": {
+                "nSSIId": [
+                    nss_instance_id
+                    ]
+                }
+            },
+            "callbackUri": settings.Kafka_URL + "topics/fault_alarm/",
+            "timeTick": 1
+        }
+        response = requests.post(uri, data=json.dumps(data), headers=headers)
+        if response.status_code == 201:
+            click.echo("notification Id: "+response.json()['data']['notificationId'])
+            #click.echo(response.json()['data']['notificationId'])
+            url = settings.Kafka_URL + "consumers/group"
+            data = {
+                "id": str(int(random.random()*100)),
+                "format": "binary",
+                "auto.offset.reset": "earliest",
+                "auto.commit.enable": "false"
+                }
+            header = {"Content-Type": "application/vnd.kafka.v2+json"}
+            consumers = requests.post(url=url, json=data, headers=header)
+            click.echo("Listen Kafka:")
+            click.echo(consumers.json()['base_uri'] + "/subscription")
+            data = {"topics": ["fault_alarm"]}
+            subscribe = requests.post(url=consumers.json()['base_uri'] + "/subscription",
+                                      json=data, headers=header)
+            header = {"Content-Type": "application/vnd.kafka.json.v2+json"}
+
+            while 1:
+                record = requests.get(url=consumers.json()['base_uri'] + "/records", headers=header)
+                if record.json():
+                    click.echo(base64.b64decode(record.json()[-1]['value']).decode())
+                    break
+                time.sleep(3)
+            click.echo('OperationSucceeded')
+        else:
+            click.echo('OperationFailed')
+    elif type == 'moi':
+        uri = settings.NM_URL + "ObjectManagement/provisioningNotifications/"
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+        response = requests.get(url=uri, headers=headers)
+        for i in response.json():
+            if i['notificationType'] == "notifyMOICreation":
+                notify_id = i['notificationId']
+        if not notify_id:
+            data = {
+            "notificationType": "notifyMOICreation",
+            "systemDN": "",
+            "objectClass": "NetworkSliceSubnet",
+            "objectInstanceInfos": [""],
+            "additionalText": [""]
+            }
+            response = requests.post(uri, data=json.dumps(data), headers=headers)
+
+
+        uri = settings.NM_URL + "ObjectManagement/subscriptions/"
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+        data = {
+          "timeTick": 1,
+          "callbackUri": "http://10.0.0.216:8082/topics/notify/",
+          "filter": [
+            notify_id if notify_id else response.json()[0]['notificationId']
           ]
         }
-      },
-      "callbackUri": settings.Kafka_URL + "topics/fault_alarm/",
-      "timeTick": 1
-    }
-    response = requests.post(uri, data=json.dumps(data), headers=headers)
-    if response.status_code == 201:
-        click.echo("notification Id:", response.json()['data']['notificationId'])
+        response = requests.post(uri, data=json.dumps(data), headers=headers)
+
         url = settings.Kafka_URL + "consumers/group"
         data = {
-            "id": str(int(random.random()*100)),
-            "format": "binary",
-            "auto.offset.reset": "earliest",
-            "auto.commit.enable": "false"
+        "id": str(int(random.random()*100)),
+        "format": "binary",
+        "auto.offset.reset": "earliest",
+        "auto.commit.enable": "false"
         }
         header = {"Content-Type": "application/vnd.kafka.v2+json"}
         consumers = requests.post(url=url, json=data, headers=header)
         click.echo("Listen Kafka:")
         click.echo(consumers.json()['base_uri'] + "/subscription")
-        data = {"topics": ["alarm"]}
+        data = {"topics": ["ns_instance"]}
         subscribe = requests.post(url=consumers.json()['base_uri'] + "/subscription",
-                                  json=data, headers=header)
+                                json=data, headers=header)
         header = {"Content-Type": "application/vnd.kafka.json.v2+json"}
 
         while 1:
             record = requests.get(url=consumers.json()['base_uri'] + "/records", headers=header)
-            click.echo(record.json())
             if record.json():
                 click.echo(base64.b64decode(record.json()[-1]['value']).decode())
                 break
             time.sleep(1)
         click.echo('OperationSucceeded')
-    else:
-        click.echo('OperationFailed')
 
 
 @delete.command('subscriptions')
@@ -459,7 +514,32 @@ def delete_subscriptions(notification_id):
     import requests
     uri = settings.NM_URL + "subscriptions/{}/".format(notification_id)
     response = requests.delete(uri)
-    if response.status_code == 201:
+    if response.status_code == 204:
         click.echo('OperationSucceeded')
     else:
         click.echo('OperationFailed')
+
+@get.command('subscriptions')
+def get_subscriptions():
+    import requests
+    uri = settings.NM_URL + "subscriptions/"
+    response = requests.get(uri)
+    data={
+        "notificationId": [],
+        "consumerReference": [],
+        "timeTick": [],
+        "filter": []
+    }
+    if response.status_code == 200:
+        for i in response.json():
+            data['notificationId'].append(i['notificationId'])
+            data['consumerReference'].append(i['consumerReference'])
+            data['timeTick'].append(i['timeTick'])
+            data['filter'].append(i['filter'])
+            output = pd.DataFrame(data=data)
+        click.echo(output.to_string(index=False, columns=['notificationId', 'consumerReference', 'timeTick', 'filter']))
+    else:
+        click.echo('OperationFailed')
+
+
+
