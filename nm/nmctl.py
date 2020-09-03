@@ -476,7 +476,7 @@ def create_subscriptions(type, nss_instance_id):
         headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         data = {
           "timeTick": 1,
-          "callbackUri": "http://10.0.0.216:8082/topics/notify/",
+          "callbackUri": settings.Kafka_URL + "topics/notify/",
           "filter": [
             notify_id if notify_id else response.json()[0]['notificationId']
           ]
@@ -519,6 +519,7 @@ def delete_subscriptions(notification_id):
     else:
         click.echo('OperationFailed')
 
+
 @get.command('subscriptions')
 def get_subscriptions():
     import requests
@@ -540,6 +541,3 @@ def get_subscriptions():
         click.echo(output.to_string(index=False, columns=['notificationId', 'consumerReference', 'timeTick', 'filter']))
     else:
         click.echo('OperationFailed')
-
-
-

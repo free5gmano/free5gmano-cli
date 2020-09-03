@@ -1,6 +1,9 @@
 import uuid
 
 import requests
+import random
+import time
+import base64
 
 from nm.nmctl import settings
 
@@ -134,3 +137,7 @@ def get_scope_level(level_selection, level):
         return level + 1
     elif level_selection == 'BASE_ALL':
         return 10
+
+
+def create_subscriptions():
+    pass
