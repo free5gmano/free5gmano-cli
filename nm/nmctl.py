@@ -169,7 +169,7 @@ def create_template(template_type, nfvo):
         download = click.confirm('Do you want to download example?')
         if download:
             example_type = click.prompt('Choice example what you want to download. Default is free5gc-stage-1 ', default='free5gc-stage-1', 
-                type=click.Choice(['free5gc-stage-1', 'free5gc-stage-2'], case_sensitive=False), show_choices=True)
+                type=click.Choice(['free5gc-stage-1', 'free5gc-stage-2', 'free5gc-stage-2-kubevirt'], case_sensitive=False), show_choices=True)
             if example_type:
                 click.echo('Downloading...')
                 download_obj = api.download_template(template_type,example_type)

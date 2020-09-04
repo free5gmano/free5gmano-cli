@@ -12,7 +12,7 @@ Please refer to [service-mapping-plugin-framework](https://github.com/free5gmano
 ```
 git clone https://github.com/free5gmano/free5gmano-cli.git
 cd free5gmano-cli
-git checkout v1.0.0
+git checkout v2.0.0
 pip3 install -e .
 ```
 ## User Guide
