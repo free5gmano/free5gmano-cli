@@ -168,11 +168,14 @@ def create_template(template_type, nfvo):
     if response.status_code == 201:
         download = click.confirm('Do you want to download example?')
         if download:
-            click.echo('Downloading...')
-            download_obj = api.download_template(template_type)
-            with zipfile.ZipFile(io.BytesIO(download_obj.content)) as zf:
-                zf.extractall(path=os.path.join(os.getcwd(), template_type))
-            click.echo('OperationSucceeded, template example created in this directory.')
+            example_type = click.prompt('Choice example what you want to download. Default is free5gc-stage-1 ', default='free5gc-stage-1', 
+                type=click.Choice(['free5gc-stage-1', 'free5gc-stage-2'], case_sensitive=False), show_choices=True)
+            if example_type:
+                click.echo('Downloading...')
+                download_obj = api.download_template(template_type,example_type)
+                with zipfile.ZipFile(io.BytesIO(download_obj.content)) as zf:
+                    zf.extractall(path=os.path.join(os.getcwd(), template_type))
+                click.echo('OperationSucceeded, template example created in this directory.')
         else:
             click.echo('OperationSucceeded')
         click.echo('Template Id: ' + response.json()['templateId'])

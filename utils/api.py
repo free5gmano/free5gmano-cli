@@ -100,9 +100,9 @@ def create_template(data):
     return requests.post(create_template_url, data=data, headers=headers)
 
 
-def download_template(template_type):
+def download_template(template_type,example_type):
     download_template_url = template_url.format('ObjectManagement', 'GenericTemplate',
-                                                'download/{}/'.format(template_type))
+                                                'download/{}/{}/'.format(example_type,template_type))
     return requests.get(download_template_url, headers=headers)
 
 
