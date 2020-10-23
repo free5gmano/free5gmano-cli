@@ -32,10 +32,10 @@ def create_moi(model_name, data):
     return requests.put(create_moi_url, data=data, headers=headers)
 
 
-def get_moi_attributes(model_name, identify, scope_type, scope_level, _filter):
+def get_moi_attributes(model_name, identify, scope_type, scope_level, filter):
     get_moi_url = nm_url.format(model_name, identify)
     scope = '["' + scope_type + '",' + str(get_scope_level(scope_type, scope_level)) + ']'
-    params = {'scope': scope, 'filter': _filter}
+    params = {'scope': scope, 'filter': filter}
     return requests.get(get_moi_url, params=params, headers=headers)
 
 
@@ -139,5 +139,39 @@ def get_scope_level(level_selection, level):
         return 10
 
 
-def create_subscriptions():
-    pass
+def create_fm_subscriptions(nss_instance_id):
+    uri = settings.NM_URL + "subscriptions/"
+    headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+    data = {
+        "filter": {
+        "nsInstanceSubscriptionFilter": {
+            "nSSIId": [
+                nss_instance_id
+                ]
+            }
+        },
+        "callbackUri": settings.Kafka_URL + "topics/fault_alarm/",
+        "timeTick": 1
+    }
+    return requests.post(uri, data=json.dumps(data), headers=headers)
+
+
+def create_consumers():
+    url = settings.Kafka_URL + "consumers/group"
+    data = {
+        "id": str(int(random.random()*100)),
+        "format": "binary",
+        "auto.offset.reset": "earliest",
+        "auto.commit.enable": "false"
+        }
+    return requests.post(url=url, json=data, headers=kafka_header)
+
+
+def create_topic(url,data):
+    data = {"topics": ["fault_alarm"]}
+    return requests.post(url=url,json=data, headers=kafka_header)
+
+
+def get_record(url):
+    header = {"Content-Type": "application/vnd.kafka.json.v2+json"}
+    return requests.get(url=url, headers=header)

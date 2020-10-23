@@ -196,7 +196,6 @@ def on_board_template(template_id, folder):
         click.echo('No such find Template Id')
 
     data = {'templateType': template['templateType'], 'nfvoType': template['nfvoType']}
-
     os.chdir(os.path.abspath(folder))
 
     with zipfile.ZipFile(os.path.basename(os.path.abspath(folder)) + '.zip',
