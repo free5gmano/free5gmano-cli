@@ -168,11 +168,14 @@ def create_template(template_type, nfvo):
     if response.status_code == 201:
         download = click.confirm('Do you want to download example?')
         if download:
-            click.echo('Downloading...')
-            download_obj = api.download_template(template_type)
-            with zipfile.ZipFile(io.BytesIO(download_obj.content)) as zf:
-                zf.extractall(path=os.path.join(os.getcwd(), template_type))
-            click.echo('OperationSucceeded, template example created in this directory.')
+            example_type = click.prompt('Choice example what you want to download. Default is free5gc-stage-1 ', default='free5gc-stage-1', 
+                type=click.Choice(['free5gc-stage-1', 'free5gc-stage-2'], case_sensitive=False), show_choices=True)
+            if example_type:
+                click.echo('Downloading...')
+                download_obj = api.download_template(template_type,example_type)
+                with zipfile.ZipFile(io.BytesIO(download_obj.content)) as zf:
+                    zf.extractall(path=os.path.join(os.getcwd(), template_type))
+                click.echo('OperationSucceeded, template example created in this directory.')
         else:
             click.echo('OperationSucceeded')
         click.echo('Template Id: ' + response.json()['templateId'])
@@ -193,7 +196,6 @@ def on_board_template(template_id, folder):
         click.echo('No such find Template Id')
 
     data = {'templateType': template['templateType'], 'nfvoType': template['nfvoType']}
-
     os.chdir(os.path.abspath(folder))
 
     with zipfile.ZipFile(os.path.basename(os.path.abspath(folder)) + '.zip',
@@ -476,7 +478,7 @@ def create_subscriptions(type, nss_instance_id):
         headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         data = {
           "timeTick": 1,
-          "callbackUri": "http://10.0.0.216:8082/topics/notify/",
+          "callbackUri": settings.Kafka_URL + "topics/notify/",
           "filter": [
             notify_id if notify_id else response.json()[0]['notificationId']
           ]
@@ -519,6 +521,7 @@ def delete_subscriptions(notification_id):
     else:
         click.echo('OperationFailed')
 
+
 @get.command('subscriptions')
 def get_subscriptions():
     import requests
@@ -540,6 +543,3 @@ def get_subscriptions():
         click.echo(output.to_string(index=False, columns=['notificationId', 'consumerReference', 'timeTick', 'filter']))
     else:
         click.echo('OperationFailed')
-
-
-
