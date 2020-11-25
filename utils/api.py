@@ -102,7 +102,7 @@ def create_template(data):
 
 def download_template(template_type,example_type):
     download_template_url = template_url.format('ObjectManagement', 'GenericTemplate',
-                                                'download/{}/{}/'.format(example_type,template_type))
+                                                'example_download/{}/{}/'.format(example_type,template_type))
     return requests.get(download_template_url, headers=headers)
 
 

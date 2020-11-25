@@ -198,27 +198,26 @@ def on_board_template(template_id, folder):
     data = {'templateType': template['templateType'], 'nfvoType': template['nfvoType']}
     os.chdir(os.path.abspath(folder))
 
-    with zipfile.ZipFile(os.path.basename(os.path.abspath(folder)) + '.zip',
-                         mode='w') as template_zip:
+    with zipfile.ZipFile(os.getcwd() + '.zip', mode='w') as template_zip:
         for root, folders, files in os.walk('.'):
             for file in files:
                 file_path = os.path.join(root, file)
-                if not file_path.__contains__('git') and not file_path.__contains__('.zip'):
-                    template_zip.write(file_path)
+                # if not file_path.__contains__('git') and not file_path.__contains__('.zip'):
+                template_zip.write(file_path)
         template_zip.close()
         file_name = os.path.basename(os.getcwd() + '.zip')
-        zipfile_path = os.path.join(os.getcwd(), os.path.basename(os.path.abspath(folder))) + '.zip'
+        os.chdir("..")
+        zipfile_path = os.getcwd() + '/' + file_name
         files = {'templateFile': (file_name, open(zipfile_path, 'rb').read(),
                           'application/zip', {'Expires': '0'})}
         response = api.on_board_template(template_id, files, data)
 
         if response.status_code == 204:
             click.echo('OperationSucceeded')
+            os.remove(zipfile_path)
         else:
             click.echo(response.status_code)
             click.echo('OperationFailed')
-
-        os.remove(zipfile_path)
 
 
 @get.command('template')
