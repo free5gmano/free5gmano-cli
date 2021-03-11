@@ -169,7 +169,7 @@ def create_template(template_type, nfvo):
         download = click.confirm('Do you want to download example?')
         if download:
             example_type = click.prompt('Choice example what you want to download. Default is free5gc-stage-1 ', default='free5gc-stage-1', 
-                type=click.Choice(['free5gc-stage-1', 'free5gc-stage-2', 'free5gc-stage-2-kubevirt'], case_sensitive=False), show_choices=True)
+                type=click.Choice(['free5gc-stage-1', 'free5gc-stage-2', 'free5gc-stage-2-kubevirt', 'free5gc-stage-3.0.4'], case_sensitive=False), show_choices=True)
             if example_type:
                 click.echo('Downloading...')
                 download_obj = api.download_template(template_type,example_type)
@@ -404,6 +404,169 @@ def deallocate_nssi(nss_instance_id):
         click.echo('OperationFailed')
 
 
+@create.command('moi')
+@click.argument('model_name')
+@click.option('-d', '--data', help='Request data.')
+@click.option('-f', '--file', help='Your request file.(.json or .yaml)')
+def create_moi(model_name, data, file):
+    if data is not None:
+        response = nm_api.create_moi(model_name, data)
+    else:
+        request_file = open(file, 'r')
+        if file in '.json':
+            response = nm_api.create_moi(model_name, request_file.read())
+        else:
+            json_request = yaml.load(request_file.read(), Loader=yaml.FullLoader)
+            json_request.replace("'", '"')
+            response = nm_api.create_moi(model_name, json_request)
+    if response.status_code == 201:
+        click.echo('OperationSucceeded')
+    elif response.status_code == 400:
+        click.echo('OperationFailed (request data error)')
+    elif response.status_code == 500:
+        click.echo('MODEL_NAME error')
+    else:
+        click.echo('OperationFailed')
+
+
+@get.command('moi')
+@click.argument('model_name')
+@click.option('-id', '--identify', default='*', help='Request id.')
+@click.option('-st', '--scope-type', default='BASE_ONLY', help='Specific response data level type.')
+@click.option('-sl', '--scope-level', default=0, help='Specific response data level.')
+@click.option('-filter', '--filter', default='', help='DB response filter.')
+@click.option('-o', '--output', default='json', help='Select output type.')
+def get_moi_attributes(model_name, identify, scope_type, scope_level, filter, output):
+    response = nm_api.get_moi_attributes(model_name, identify, scope_type, scope_level, filter)
+
+    if response.status_code == 200:
+        if response.json()['attributeListOut']:
+            response_json = response.json()['attributeListOut']
+            if output == 'json':
+                click.echo(response.json()['status'])
+                click.echo()
+                click.echo(json.dumps(response_json, indent=4, sort_keys=True))
+            elif output == 'yaml':
+                try:
+                    tmp_path = 'output.yaml'
+                    output_file = open(tmp_path, 'w+', encoding='utf-8')
+                    yaml.dump(response_json, output_file, allow_unicode=True)
+                    output_file.close()
+                    yaml_file = open(tmp_path, 'r', encoding='utf-8')
+                    click.echo(response.json()['status'])
+                    click.echo()
+                    click.echo(yaml_file.read())
+                    yaml_file.close()
+                    os.remove(tmp_path)
+                except yaml.YAMLError as exc:
+                    click.echo(exc)
+            else:
+                pass
+        else:
+            click.echo('Can not find any data.')
+    elif response.status_code == 400:
+        click.echo('OperationFailed')
+    elif response.status_code == 500:
+        click.echo('MODEL_NAME error')
+    else:
+        click.echo('OperationFailed')
+
+
+@modify.command('moi')
+@click.argument('model_name')
+@click.option('-id', '--identify', default='*', help='Request id.')
+@click.option('-st', '--scope-type', default='BASE_ONLY', help='Specific response data level type.')
+@click.option('-sl', '--scope-level', default=0, help='Specific response data level.')
+@click.option('-filter', '--filter', default='', help='DB response filter.')
+@click.option('-o', '--output', default='json', help='Select output type.')
+@click.option('-d', '--data', help='Request data.')
+@click.option('-f', '--file', help='Your request file.(.json or .yaml)')
+def modify_moi_attributes(model_name, identify, scope_type, scope_level, filter, output, data,
+                          file):
+    if data is not None:
+        response = nm_api.modify_moi_attributes(model_name, identify, scope_type, scope_level,
+                                                filter, data)
+    else:
+        request_file = open(file, 'r')
+        response = nm_api.modify_moi_attributes(model_name, identify, scope_type, scope_level,
+                                                filter, request_file.read())
+
+    if response.status_code == 200:
+        if response.json()['attributeListOut']:
+            response_json = response.json()['attributeListOut']
+            if output == 'json':
+                click.echo(response.json()['status'])
+                click.echo()
+                click.echo(json.dumps(response_json, indent=4, sort_keys=True))
+            elif output == 'yaml':
+                try:
+                    tmp_path = 'output.yaml'
+                    output_file = open(tmp_path, 'w+', encoding='utf-8')
+                    yaml.dump(response_json, output_file, allow_unicode=True)
+                    output_file.close()
+                    yaml_file = open(tmp_path, 'r', encoding='utf-8')
+                    click.echo(response.json()['status'])
+                    click.echo()
+                    click.echo(yaml_file.read())
+                    yaml_file.close()
+                    os.remove(tmp_path)
+                except yaml.YAMLError as exc:
+                    click.echo(exc)
+            else:
+                pass
+        else:
+            click.echo('Can not find any data.')
+    elif response.status_code == 400:
+        click.echo('OperationFailed')
+    elif response.status_code == 500:
+        click.echo('MODEL_NAME error')
+    else:
+        click.echo('OperationFailed')
+
+
+@delete.command('moi')
+@click.argument('model_name')
+@click.option('-id', '--identify', default='*', help='Request id.')
+@click.option('-st', '--scope-type', default='BASE_ONLY', help='Specific response data level type.')
+@click.option('-sl', '--scope-level', default=0, help='Specific response data level.')
+@click.option('-filter', '--filter', default='', help='DB response filter.')
+@click.option('-o', '--output', default='json', help='Select output type.')
+def delete_moi(model_name, identify, scope_type, scope_level, filter, output):
+    response = nm_api.delete_moi(model_name, identify, scope_type, scope_level, filter)
+
+    if response.status_code == 200:
+        if response.json()['deletionList']:
+            response_json = response.json()['deletionList']
+            if output == 'json':
+                click.echo(response.json()['status'])
+                click.echo()
+                click.echo(json.dumps(response_json, indent=4, sort_keys=True))
+            elif output == 'yaml':
+                try:
+                    tmp_path = 'output.yaml'
+                    output_file = open(tmp_path, 'w+', encoding='utf-8')
+                    yaml.dump(response_json, output_file, allow_unicode=True)
+                    output_file.close()
+                    yaml_file = open(tmp_path, 'r', encoding='utf-8')
+                    click.echo(response.json()['status'])
+                    click.echo()
+                    click.echo(yaml_file.read())
+                    yaml_file.close()
+                    os.remove(tmp_path)
+                except yaml.YAMLError as exc:
+                    click.echo(exc)
+            else:
+                pass
+        else:
+            click.echo('Can not find any data to delete.')
+    elif response.status_code == 400:
+        click.echo('OperationFailed')
+    elif response.status_code == 500:
+        click.echo('MODEL_NAME error')
+    else:
+        click.echo('OperationFailed')
+
+
 @create.command('subscriptions')
 @click.option('-t', '--type', required=True, help='Only fm or moi')
 @click.argument('nss_instance_id', required=True)
@@ -542,5 +705,24 @@ def get_subscriptions():
             data['filter'].append(i['filter'])
             output = pd.DataFrame(data=data)
         click.echo(output.to_string(index=False, columns=['notificationId', 'consumerReference', 'timeTick', 'filter']))
+    else:
+        click.echo('OperationFailed')
+
+
+@get.command('alarm')
+def get_alarms():
+    import requests
+    uri = settings.NM_URL + "alarms/"
+    response = requests.get(uri)
+    data={
+        "alarmId": [],
+        "alarmType": []
+    }
+    if response.status_code == 200:
+        for i in response.json():
+            data['alarmId'].append(i['alarmId'])
+            data['alarmType'].append(i['alarmType'])
+            output = pd.DataFrame(data=data)
+        click.echo(output.to_string(index=False, columns=['alarmId', 'alarmType']))
     else:
         click.echo('OperationFailed')

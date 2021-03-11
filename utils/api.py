@@ -102,7 +102,7 @@ def create_template(data):
 
 def download_template(template_type,example_type):
     download_template_url = template_url.format('ObjectManagement', 'GenericTemplate',
-                                                'download/{}/{}/'.format(example_type,template_type))
+                                                'example_download/{}/{}/'.format(example_type,template_type))
     return requests.get(download_template_url, headers=headers)
 
 
@@ -139,5 +139,39 @@ def get_scope_level(level_selection, level):
         return 10
 
 
-def create_subscriptions():
-    pass
+def create_fm_subscriptions(nss_instance_id):
+    uri = settings.NM_URL + "subscriptions/"
+    headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+    data = {
+        "filter": {
+        "nsInstanceSubscriptionFilter": {
+            "nSSIId": [
+                nss_instance_id
+                ]
+            }
+        },
+        "callbackUri": settings.Kafka_URL + "topics/fault_alarm/",
+        "timeTick": 1
+    }
+    return requests.post(uri, data=json.dumps(data), headers=headers)
+
+
+def create_consumers():
+    url = settings.Kafka_URL + "consumers/group"
+    data = {
+        "id": str(int(random.random()*100)),
+        "format": "binary",
+        "auto.offset.reset": "earliest",
+        "auto.commit.enable": "false"
+        }
+    return requests.post(url=url, json=data, headers=kafka_header)
+
+
+def create_topic(url,data):
+    data = {"topics": ["fault_alarm"]}
+    return requests.post(url=url,json=data, headers=kafka_header)
+
+
+def get_record(url):
+    header = {"Content-Type": "application/vnd.kafka.json.v2+json"}
+    return requests.get(url=url, headers=header)
