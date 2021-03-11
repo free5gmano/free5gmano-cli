@@ -32,10 +32,10 @@ def create_moi(model_name, data):
     return requests.put(create_moi_url, data=data, headers=headers)
 
 
-def get_moi_attributes(model_name, identify, scope_type, scope_level, filter):
+def get_moi_attributes(model_name, identify, scope_type, scope_level, _filter):
     get_moi_url = nm_url.format(model_name, identify)
     scope = '["' + scope_type + '",' + str(get_scope_level(scope_type, scope_level)) + ']'
-    params = {'scope': scope, 'filter': filter}
+    params = {'scope': scope, 'filter': _filter}
     return requests.get(get_moi_url, params=params, headers=headers)
 
 
@@ -102,7 +102,7 @@ def create_template(data):
 
 def download_template(template_type,example_type):
     download_template_url = template_url.format('ObjectManagement', 'GenericTemplate',
-                                                'download/{}/{}/'.format(example_type,template_type))
+                                                'example_download/{}/{}/'.format(example_type,template_type))
     return requests.get(download_template_url, headers=headers)
 
 
