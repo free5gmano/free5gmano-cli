@@ -168,11 +168,14 @@ def create_template(template_type, nfvo):
     if response.status_code == 201:
         download = click.confirm('Do you want to download example?')
         if download:
-            click.echo('Downloading...')
-            download_obj = api.download_template(template_type)
-            with zipfile.ZipFile(io.BytesIO(download_obj.content)) as zf:
-                zf.extractall(path=os.path.join(os.getcwd(), template_type))
-            click.echo('OperationSucceeded, template example created in this directory.')
+            example_type = click.prompt('Choice example what you want to download. Default is free5gc-stage-1 ', default='free5gc-stage-1', 
+                type=click.Choice(['free5gc-stage-1', 'free5gc-stage-2', 'free5gc-stage-2-kubevirt', 'free5gc-stage-3.0.4'], case_sensitive=False), show_choices=True)
+            if example_type:
+                click.echo('Downloading...')
+                download_obj = api.download_template(template_type,example_type)
+                with zipfile.ZipFile(io.BytesIO(download_obj.content)) as zf:
+                    zf.extractall(path=os.path.join(os.getcwd(), template_type))
+                click.echo('OperationSucceeded, template example created in this directory.')
         else:
             click.echo('OperationSucceeded')
         click.echo('Template Id: ' + response.json()['templateId'])
@@ -400,3 +403,326 @@ def deallocate_nssi(nss_instance_id):
     else:
         click.echo('OperationFailed')
 
+
+@create.command('moi')
+@click.argument('model_name')
+@click.option('-d', '--data', help='Request data.')
+@click.option('-f', '--file', help='Your request file.(.json or .yaml)')
+def create_moi(model_name, data, file):
+    if data is not None:
+        response = nm_api.create_moi(model_name, data)
+    else:
+        request_file = open(file, 'r')
+        if file in '.json':
+            response = nm_api.create_moi(model_name, request_file.read())
+        else:
+            json_request = yaml.load(request_file.read(), Loader=yaml.FullLoader)
+            json_request.replace("'", '"')
+            response = nm_api.create_moi(model_name, json_request)
+    if response.status_code == 201:
+        click.echo('OperationSucceeded')
+    elif response.status_code == 400:
+        click.echo('OperationFailed (request data error)')
+    elif response.status_code == 500:
+        click.echo('MODEL_NAME error')
+    else:
+        click.echo('OperationFailed')
+
+
+@get.command('moi')
+@click.argument('model_name')
+@click.option('-id', '--identify', default='*', help='Request id.')
+@click.option('-st', '--scope-type', default='BASE_ONLY', help='Specific response data level type.')
+@click.option('-sl', '--scope-level', default=0, help='Specific response data level.')
+@click.option('-filter', '--filter', default='', help='DB response filter.')
+@click.option('-o', '--output', default='json', help='Select output type.')
+def get_moi_attributes(model_name, identify, scope_type, scope_level, filter, output):
+    response = nm_api.get_moi_attributes(model_name, identify, scope_type, scope_level, filter)
+
+    if response.status_code == 200:
+        if response.json()['attributeListOut']:
+            response_json = response.json()['attributeListOut']
+            if output == 'json':
+                click.echo(response.json()['status'])
+                click.echo()
+                click.echo(json.dumps(response_json, indent=4, sort_keys=True))
+            elif output == 'yaml':
+                try:
+                    tmp_path = 'output.yaml'
+                    output_file = open(tmp_path, 'w+', encoding='utf-8')
+                    yaml.dump(response_json, output_file, allow_unicode=True)
+                    output_file.close()
+                    yaml_file = open(tmp_path, 'r', encoding='utf-8')
+                    click.echo(response.json()['status'])
+                    click.echo()
+                    click.echo(yaml_file.read())
+                    yaml_file.close()
+                    os.remove(tmp_path)
+                except yaml.YAMLError as exc:
+                    click.echo(exc)
+            else:
+                pass
+        else:
+            click.echo('Can not find any data.')
+    elif response.status_code == 400:
+        click.echo('OperationFailed')
+    elif response.status_code == 500:
+        click.echo('MODEL_NAME error')
+    else:
+        click.echo('OperationFailed')
+
+
+@modify.command('moi')
+@click.argument('model_name')
+@click.option('-id', '--identify', default='*', help='Request id.')
+@click.option('-st', '--scope-type', default='BASE_ONLY', help='Specific response data level type.')
+@click.option('-sl', '--scope-level', default=0, help='Specific response data level.')
+@click.option('-filter', '--filter', default='', help='DB response filter.')
+@click.option('-o', '--output', default='json', help='Select output type.')
+@click.option('-d', '--data', help='Request data.')
+@click.option('-f', '--file', help='Your request file.(.json or .yaml)')
+def modify_moi_attributes(model_name, identify, scope_type, scope_level, filter, output, data,
+                          file):
+    if data is not None:
+        response = nm_api.modify_moi_attributes(model_name, identify, scope_type, scope_level,
+                                                filter, data)
+    else:
+        request_file = open(file, 'r')
+        response = nm_api.modify_moi_attributes(model_name, identify, scope_type, scope_level,
+                                                filter, request_file.read())
+
+    if response.status_code == 200:
+        if response.json()['attributeListOut']:
+            response_json = response.json()['attributeListOut']
+            if output == 'json':
+                click.echo(response.json()['status'])
+                click.echo()
+                click.echo(json.dumps(response_json, indent=4, sort_keys=True))
+            elif output == 'yaml':
+                try:
+                    tmp_path = 'output.yaml'
+                    output_file = open(tmp_path, 'w+', encoding='utf-8')
+                    yaml.dump(response_json, output_file, allow_unicode=True)
+                    output_file.close()
+                    yaml_file = open(tmp_path, 'r', encoding='utf-8')
+                    click.echo(response.json()['status'])
+                    click.echo()
+                    click.echo(yaml_file.read())
+                    yaml_file.close()
+                    os.remove(tmp_path)
+                except yaml.YAMLError as exc:
+                    click.echo(exc)
+            else:
+                pass
+        else:
+            click.echo('Can not find any data.')
+    elif response.status_code == 400:
+        click.echo('OperationFailed')
+    elif response.status_code == 500:
+        click.echo('MODEL_NAME error')
+    else:
+        click.echo('OperationFailed')
+
+
+@delete.command('moi')
+@click.argument('model_name')
+@click.option('-id', '--identify', default='*', help='Request id.')
+@click.option('-st', '--scope-type', default='BASE_ONLY', help='Specific response data level type.')
+@click.option('-sl', '--scope-level', default=0, help='Specific response data level.')
+@click.option('-filter', '--filter', default='', help='DB response filter.')
+@click.option('-o', '--output', default='json', help='Select output type.')
+def delete_moi(model_name, identify, scope_type, scope_level, filter, output):
+    response = nm_api.delete_moi(model_name, identify, scope_type, scope_level, filter)
+
+    if response.status_code == 200:
+        if response.json()['deletionList']:
+            response_json = response.json()['deletionList']
+            if output == 'json':
+                click.echo(response.json()['status'])
+                click.echo()
+                click.echo(json.dumps(response_json, indent=4, sort_keys=True))
+            elif output == 'yaml':
+                try:
+                    tmp_path = 'output.yaml'
+                    output_file = open(tmp_path, 'w+', encoding='utf-8')
+                    yaml.dump(response_json, output_file, allow_unicode=True)
+                    output_file.close()
+                    yaml_file = open(tmp_path, 'r', encoding='utf-8')
+                    click.echo(response.json()['status'])
+                    click.echo()
+                    click.echo(yaml_file.read())
+                    yaml_file.close()
+                    os.remove(tmp_path)
+                except yaml.YAMLError as exc:
+                    click.echo(exc)
+            else:
+                pass
+        else:
+            click.echo('Can not find any data to delete.')
+    elif response.status_code == 400:
+        click.echo('OperationFailed')
+    elif response.status_code == 500:
+        click.echo('MODEL_NAME error')
+    else:
+        click.echo('OperationFailed')
+
+
+@create.command('subscriptions')
+@click.option('-t', '--type', required=True, help='Only fm or moi')
+@click.argument('nss_instance_id', required=True)
+def create_subscriptions(type, nss_instance_id):
+    import requests
+    import json
+    import random
+    import time
+    import base64
+
+    if type == 'fm':
+        uri = settings.NM_URL + "subscriptions/"
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+        data = {
+            "filter": {
+            "nsInstanceSubscriptionFilter": {
+                "nSSIId": [
+                    nss_instance_id
+                    ]
+                }
+            },
+            "callbackUri": settings.Kafka_URL + "topics/fault_alarm/",
+            "timeTick": 1
+        }
+        response = requests.post(uri, data=json.dumps(data), headers=headers)
+        if response.status_code == 201:
+            click.echo("notification Id: "+response.json()['data']['notificationId'])
+            #click.echo(response.json()['data']['notificationId'])
+            url = settings.Kafka_URL + "consumers/group"
+            data = {
+                "id": str(int(random.random()*100)),
+                "format": "binary",
+                "auto.offset.reset": "earliest",
+                "auto.commit.enable": "false"
+                }
+            header = {"Content-Type": "application/vnd.kafka.v2+json"}
+            consumers = requests.post(url=url, json=data, headers=header)
+            click.echo("Listen Kafka:")
+            click.echo(consumers.json()['base_uri'] + "/subscription")
+            data = {"topics": ["fault_alarm"]}
+            subscribe = requests.post(url=consumers.json()['base_uri'] + "/subscription",
+                                      json=data, headers=header)
+            header = {"Content-Type": "application/vnd.kafka.json.v2+json"}
+
+            while 1:
+                record = requests.get(url=consumers.json()['base_uri'] + "/records", headers=header)
+                if record.json():
+                    click.echo(base64.b64decode(record.json()[-1]['value']).decode())
+                    break
+                time.sleep(3)
+            click.echo('OperationSucceeded')
+        else:
+            click.echo('OperationFailed')
+    elif type == 'moi':
+        uri = settings.NM_URL + "ObjectManagement/provisioningNotifications/"
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+        response = requests.get(url=uri, headers=headers)
+        for i in response.json():
+            if i['notificationType'] == "notifyMOICreation":
+                notify_id = i['notificationId']
+        if not notify_id:
+            data = {
+            "notificationType": "notifyMOICreation",
+            "systemDN": "",
+            "objectClass": "NetworkSliceSubnet",
+            "objectInstanceInfos": [""],
+            "additionalText": [""]
+            }
+            response = requests.post(uri, data=json.dumps(data), headers=headers)
+
+
+        uri = settings.NM_URL + "ObjectManagement/subscriptions/"
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+        data = {
+          "timeTick": 1,
+          "callbackUri": settings.Kafka_URL + "topics/notify/",
+          "filter": [
+            notify_id if notify_id else response.json()[0]['notificationId']
+          ]
+        }
+        response = requests.post(uri, data=json.dumps(data), headers=headers)
+
+        url = settings.Kafka_URL + "consumers/group"
+        data = {
+        "id": str(int(random.random()*100)),
+        "format": "binary",
+        "auto.offset.reset": "earliest",
+        "auto.commit.enable": "false"
+        }
+        header = {"Content-Type": "application/vnd.kafka.v2+json"}
+        consumers = requests.post(url=url, json=data, headers=header)
+        click.echo("Listen Kafka:")
+        click.echo(consumers.json()['base_uri'] + "/subscription")
+        data = {"topics": ["ns_instance"]}
+        subscribe = requests.post(url=consumers.json()['base_uri'] + "/subscription",
+                                json=data, headers=header)
+        header = {"Content-Type": "application/vnd.kafka.json.v2+json"}
+
+        while 1:
+            record = requests.get(url=consumers.json()['base_uri'] + "/records", headers=header)
+            if record.json():
+                click.echo(base64.b64decode(record.json()[-1]['value']).decode())
+                break
+            time.sleep(1)
+        click.echo('OperationSucceeded')
+
+
+@delete.command('subscriptions')
+@click.argument('notification_id', required=True)
+def delete_subscriptions(notification_id):
+    import requests
+    uri = settings.NM_URL + "subscriptions/{}/".format(notification_id)
+    response = requests.delete(uri)
+    if response.status_code == 204:
+        click.echo('OperationSucceeded')
+    else:
+        click.echo('OperationFailed')
+
+
+@get.command('subscriptions')
+def get_subscriptions():
+    import requests
+    uri = settings.NM_URL + "subscriptions/"
+    response = requests.get(uri)
+    data={
+        "notificationId": [],
+        "consumerReference": [],
+        "timeTick": [],
+        "filter": []
+    }
+    if response.status_code == 200:
+        for i in response.json():
+            data['notificationId'].append(i['notificationId'])
+            data['consumerReference'].append(i['consumerReference'])
+            data['timeTick'].append(i['timeTick'])
+            data['filter'].append(i['filter'])
+            output = pd.DataFrame(data=data)
+        click.echo(output.to_string(index=False, columns=['notificationId', 'consumerReference', 'timeTick', 'filter']))
+    else:
+        click.echo('OperationFailed')
+
+
+@get.command('alarm')
+def get_alarms():
+    import requests
+    uri = settings.NM_URL + "alarms/"
+    response = requests.get(uri)
+    data={
+        "alarmId": [],
+        "alarmType": []
+    }
+    if response.status_code == 200:
+        for i in response.json():
+            data['alarmId'].append(i['alarmId'])
+            data['alarmType'].append(i['alarmType'])
+            output = pd.DataFrame(data=data)
+        click.echo(output.to_string(index=False, columns=['alarmId', 'alarmType']))
+    else:
+        click.echo('OperationFailed')
