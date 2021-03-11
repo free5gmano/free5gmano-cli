@@ -12,6 +12,7 @@ Please refer to [service-mapping-plugin-framework](https://github.com/free5gmano
 ```
 git clone https://github.com/free5gmano/free5gmano-cli.git
 cd free5gmano-cli
+git checkout v2.0.0
 pip3 install -e .
 ```
 ## User Guide
@@ -82,4 +83,14 @@ nmctl get nsst <NSST template_id>
 7. delete NSST
 ```
 nmctl delete nsst <NSST template_id>
+```
+
+8. subscribe NSSI (Fault Management)
+```
+nmctl create subscriptions <NSS_INSTANCE_ID>
+```
+
+8. unsubscribe NSSI (Fault Management)
+```
+nmctl delete subscriptions <NSS_INSTANCE_ID>
 ```
