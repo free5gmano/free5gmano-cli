@@ -181,15 +181,6 @@ def get_record(url):
     return requests.get(url=url, headers=header)
 
 
-# def createuser(username,password):
-#     url=settings.NM_URL + 'signin/createuser/'
-#     data = {
-#         "username": username ,
-#         "password": password
-#         }
-#     return requests.post(url=url,data=data,headers=myheader)
-
-
 def createuser(name,password):
     url=settings.NM_URL + 'SecurityManagement/register/'
     data = json.dumps({
@@ -197,15 +188,6 @@ def createuser(name,password):
         "password": password
         })
     return requests.post(url=url,data=data)
-
-    
-# def login(username,password):
-#     url=settings.NM_URL + 'signin/login/'
-#     data = {
-#         "username": username ,
-#         "password": password
-#         }
-#     return requests.post(url=url,data=data,headers=myheader)
 
 
 def login(username,password):
@@ -215,11 +197,6 @@ def login(username,password):
         "password": password
         })
     return requests.post(url=url,data=data)
-
-
-# def logout():
-#     url=settings.NM_URL + 'signin/logout/'
-#     return requests.post(url=url,headers=myheader)
 
 
 def logout():
