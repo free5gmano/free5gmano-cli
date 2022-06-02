@@ -62,6 +62,15 @@ def allocate():
 def deallocate():
     pass
 
+@cli.group(context_settings=CONTEXT_SETTINGS)
+def createuser():
+    pass
+
+
+@cli.group(context_settings=CONTEXT_SETTINGS)
+def loginout():
+    pass
+
 
 @create.command('nsst')
 @click.argument('template_id', nargs=3)
@@ -724,5 +733,59 @@ def get_alarms():
             data['alarmType'].append(i['alarmType'])
             output = pd.DataFrame(data=data)
         click.echo(output.to_string(index=False, columns=['alarmId', 'alarmType']))
+    else:
+        click.echo('OperationFailed')
+
+
+# @createuser.command('user')
+# @click.argument('username', required=True)
+# @click.argument('password', required=True)
+# def createuser(username,password):
+#     username=username
+#     password=password
+#     response = api.createuser(username, password)
+#     if response.status_code == 200:
+#         if response.json()['status'] == 1 :
+#             click.echo('已存在')
+#         else:
+#             click.echo('OperationSucces')
+#     else:
+#         click.echo('OperationFailed')
+
+
+@loginout.command('login')
+@click.argument('username', required=True)
+@click.argument('password', required=True)
+def login(username,password):
+    username=username
+    password=password
+    response = api.login(username, password)
+    if response.status_code == 200:
+        click.echo('OperationSucces')
+    else:
+        click.echo('OperationFailed')
+
+
+@loginout.command('logout')
+def logout():
+    response = api.logout()
+    if response.status_code == 200:
+        click.echo('OperationSucces')
+    else:
+        click.echo('OperationFailed')
+
+
+@createuser.command('user')
+@click.argument('username', required=True)
+@click.argument('password', required=True)
+def createuser(username,password):
+    name=username
+    password=password
+    response = api.createuser(name, password)
+    if response.status_code == 200:
+        if response.json()['status'] == 1 :
+            click.echo('已存在')
+        else:
+            click.echo('OperationSucces')
     else:
         click.echo('OperationFailed')
