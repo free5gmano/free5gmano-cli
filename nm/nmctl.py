@@ -746,6 +746,8 @@ def login(username,password):
     response = api.login(username, password)
     if response.status_code == 200:
         if response.json()['status'] == 1:
+            # if response.json()['message']== "該帳號未被授權":
+            #     click.echo('Your account is not Authorization')
             click.echo('OperationFailed')
         else:
             click.echo('OperationSucces')
