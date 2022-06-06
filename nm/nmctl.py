@@ -744,11 +744,14 @@ def login(username,password):
     username=username
     password=password
     response = api.login(username, password)
+    get_cookie = open('get_cookie.txt','w+')
+    get_cookie.write(str(response.cookies.get('token')))
+    get_cookie.close()
     if response.status_code == 200:
         if response.json()['status'] == 1:
             # if response.json()['message']== "該帳號未被授權":
             #     click.echo('Your account is not Authorization')
-            click.echo('OperationFailed')
+            click.echo('fail')
         else:
             click.echo('OperationSucces')
     else:
