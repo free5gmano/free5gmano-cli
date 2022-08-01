@@ -4,6 +4,7 @@ import requests
 import random
 import time
 import base64
+import json
 
 from nm.nmctl import settings
 
@@ -15,7 +16,10 @@ zip_headers = {
     'Accept': "application/json,application/zip",
     'accept-encoding': "gzip, deflate"
 }
-
+# myheader={
+#     'Accept': 'application/json',
+#     'Content-Type': 'application/json'
+# }
 
 def allocate_nssi(data):
     allocate_nssi_url = nm_url.format('NSS', 'SliceProfiles', '')
@@ -175,3 +179,26 @@ def create_topic(url,data):
 def get_record(url):
     header = {"Content-Type": "application/vnd.kafka.json.v2+json"}
     return requests.get(url=url, headers=header)
+
+
+def createuser(name,password):
+    url=settings.NM_URL + 'SecurityManagement/register/'
+    data = json.dumps({
+        "name": name ,
+        "password": password
+        })
+    return requests.post(url=url,data=data)
+
+
+def login(username,password):
+    url=settings.NM_URL + 'SecurityManagement/login/'
+    data = json.dumps({
+        "name": username ,
+        "password": password
+        })
+    return requests.post(url=url,data=data)
+
+
+def logout():
+    url=settings.NM_URL + 'SecurityManagement/logout/'
+    return requests.post(url=url)

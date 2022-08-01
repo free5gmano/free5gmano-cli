@@ -62,6 +62,15 @@ def allocate():
 def deallocate():
     pass
 
+@cli.group(context_settings=CONTEXT_SETTINGS)
+def createuser():
+    pass
+
+
+@cli.group(context_settings=CONTEXT_SETTINGS)
+def loginout():
+    pass
+
 
 @create.command('nsst')
 @click.argument('template_id', nargs=3)
@@ -724,5 +733,52 @@ def get_alarms():
             data['alarmType'].append(i['alarmType'])
             output = pd.DataFrame(data=data)
         click.echo(output.to_string(index=False, columns=['alarmId', 'alarmType']))
+    else:
+        click.echo('OperationFailed')
+
+
+@loginout.command('login')
+@click.argument('username', required=True)
+@click.argument('password', required=True)
+def login(username,password):
+    username=username
+    password=password
+    response = api.login(username, password)
+    get_cookie = open('get_cookie.txt','w+')
+    get_cookie.write(str(response.cookies.get('token')))
+    get_cookie.close()
+    if response.status_code == 200:
+        if response.json()['status'] == 1:
+            # if response.json()['message']== "該帳號未被授權":
+            #     click.echo('Your account is not Authorization')
+            click.echo('fail')
+        else:
+            click.echo('OperationSucces')
+    else:
+        click.echo('OperationFailed')
+
+
+@loginout.command('logout')
+def logout():
+    response = api.logout()
+    if response.status_code == 200:
+        click.echo('OperationSucces')
+    else:
+        click.echo('OperationFailed')
+
+
+@createuser.command('user')
+@click.argument('username', required=True)
+@click.argument('password', required=True)
+def createuser(username,password):
+    name=username
+    password=password
+    response = api.createuser(name, password)
+    if response.status_code == 200:
+        if response.json()['status'] == 1 :
+            #click.echo('already_exist')
+            click.echo('OperationFailed')
+        else:
+            click.echo('OperationSucces')
     else:
         click.echo('OperationFailed')

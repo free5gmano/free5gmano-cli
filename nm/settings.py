@@ -1,5 +1,5 @@
-NM_HOST = '127.0.0.1'
-NM_PORT = '8080'
+NM_HOST = '10.20.1.174'
+NM_PORT = '8000'
 NM_URL = 'http://{0}:{1}/'.format(NM_HOST, NM_PORT)
 
 Kafka_HOST = '10.0.0.216'
